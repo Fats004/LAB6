@@ -1,0 +1,64 @@
+/*
+ * Lab6.c
+ *
+ * Created: 4/22/2024 10:41:22 AM
+ * Author : Fatima
+ */ 
+
+
+#define F_CPU 16000000
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+
+void initUART9600(void);
+void writeUART(char caracter);
+
+volatile char recibido;
+volatile char primero;
+volatile char segundo;
+
+int main(void)
+{
+	DDRB = 0x3F;
+	DDRC |= (1 << DDC0) | (1 << DDC1);
+	
+    initUART9600();
+	sei();
+	
+	writeUART('H');
+	
+    while (1) 
+    {
+		PORTB = primero;
+		PORTC = segundo;
+    }
+}
+
+void writeUART(char caracter){
+	while(!(UCSR0A & (1 << UDRE0)));
+	UDR0 = caracter;
+}
+
+ISR(USART_RX_vect){
+	recibido = UDR0;
+	
+	primero = (recibido & 0x3F);
+	segundo = (recibido & 0xc0)>>6;
+}
+
+void initUART9600(void){
+	DDRD |= (1 << DDD1);
+	DDRD &= (1 << DDD0);
+	
+	UCSR0A = 0;
+	UCSR0A |= (1 << U2X0);
+	
+	UCSR0B = 0;
+	UCSR0B |= (1 << RXCIE0) | (1 << RXEN0) | (1 << TXEN0);
+	
+	UCSR0C = 0;
+	UCSR0C |= (1 << UCSZ01) | (1 << UCSZ00);
+	
+	UBRR0 = 207;
+}
